@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Ambulance Green Corridor</title>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --panel-dark: #111827;
+      --accent: #22c55e;
+      --text-light: #e5e7eb;
+      --text-muted: #9ca3af;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-light);
+    }
+
+    #map {
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Top Header */
+    .header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(
+        to right,
+        rgba(15, 23, 42, 0.95),
+        rgba(15, 23, 42, 0.7)
+      );
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--accent);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* Info Panel */
+    .panel {
+      position: absolute;
+      right: 20px;
+      top: 80px;
+      width: 300px;
+      background: var(--panel-dark);
+      border-radius: 10px;
+      padding: 16px;
+      z-index: 1000;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    }
+
+    .panel h2 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
+    .info-label {
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--accent);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* Legend */
+    .legend {
+      position: absolute;
+      left: 20px;
+      bottom: 20px;
+      background: var(--panel-dark);
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 1000;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot.green {
+      background: var(--accent);
+    }
+
+    .dot.red {
+      background: var(--danger);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🚑 Smart Ambulance Green Corridor</h1>
+    <div class="status">
+      <div class="status-dot"></div>
+      Live System Active
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Info Panel -->
+  <div class="panel">
+    <h2>Ambulance Telemetry</h2>
+
+    <div class="info-row">
+      <span class="info-label">Latitude</span>
+      <span class="info-value" id="lat">--</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">Longitude</span>
+      <span class="info-value" id="lon">--</span>
+    </div>
+
+    <div class="info-row">
+      <span class="info-label">Green Signals</span>
+      <span class="info-value" id="signalCount">0</span>
+    </div>
+
+    <div class="badge">Green Corridor Active</div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="dot green"></div>
+      Green Signal
+    </div>
+    <div class="legend-item">
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/2967/2967350.png"
+        width="16"
+      />
+      Ambulance
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    const map = L.map("map").setView([22.72, 75.86], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19
+    }).addTo(map);
+
+    const ambulanceIcon = L.icon({
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/2967/2967350.png",
+      iconSize: [40, 40]
+    });
+
+    let ambulanceMarker = null;
+    let signalMarkers = [];
+
+    async function update() {
+      const res = await fetch("http://127.0.0.1:8000/ambulance");
+      const data = await res.json();
+
+      const lat = data.ambulance.lat;
+      const lon = data.ambulance.lon;
+
+      document.getElementById("lat").innerText = lat.toFixed(5);
+      document.getElementById("lon").innerText = lon.toFixed(5);
+      document.getElementById("signalCount").innerText =
+        data.green_signals.length;
+
+      if (!ambulanceMarker) {
+        ambulanceMarker = L.marker([lat, lon], {
+          icon: ambulanceIcon
+        }).addTo(map);
+        map.setView([lat, lon], 15);
+      } else {
+        ambulanceMarker.setLatLng([lat, lon]);
+      }
+
+      // Clear old signals
+      signalMarkers.forEach(m => map.removeLayer(m));
+      signalMarkers = [];
+
+      // Draw green signals
+      data.green_signals.forEach(sig => {
+        const marker = L.circleMarker([sig.lat, sig.lon], {
+          radius: 6,
+          color: "#22c55e",
+          fillColor: "#22c55e",
+          fillOpacity: 0.9
+        }).addTo(map);
+        signalMarkers.push(marker);
+      });
+    }
+
+    setInterval(update, 1000);
+  </script>
+
+</body>
+</html>
