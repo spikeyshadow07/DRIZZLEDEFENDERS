@@ -3,7 +3,7 @@ import numpy as np
 import csv
 import shortest_path as sp
 
-def distance_between_nodes(n1, n2):
+def distance_between_nodes(n1, n2, nodes_all):
 	node1 = nodes_all[n1, :]
 	node2 = nodes_all[n2, :]
 	return math.sqrt((node1[0] - node2[0])**2 + (node1[1] - node2[1])**2)
